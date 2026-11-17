@@ -1,0 +1,38 @@
+# agent-relay-engine 1.8.8 릴리스 노트
+
+바뀐 범위: 1.8.7 → 1.8.8
+
+### core
+
+- **`core.config{warning:'approval-mode'}`(Claude).** `permissions.approval` 이 `{kind:'control'}`·`{kind:'mcpTool'}` 인데 `permissions.mode` 가 `'dontAsk'`(기본값 포함)면, CLI 가 허용 목록 밖 도구를 묻지 않고 바로 거부해 `permission` 이벤트가 오지 않는다. 1.8.8 은 이 조합이면 프로세스마다 한 번 `ext{core.config, {warning:'approval-mode', approval, mode}}` 로 알린다(세션 덮어쓰기·정책 파일 병합으로 정해진 값도 같다). Codex 는 같은 조합에서 경고가 없다. 동작은 바뀌지 않는다 — 모드를 대신 바꾸지 않으므로 묻게 하려면 `mode:'default'` 를 함께 준다. `core.config` 페이로드 유니언에 이 한 갈래가 늘었다(`switch` 로 `warning` 을 가르는 코드는 모르는 값을 무시하게 둔다).
+- **`Engine.turn` 이 입력 묶음(배열)을 받는다.** `turn(sessionId, input: TurnInput | string | TurnInputBundle, opts?)` — 배열이면 여러 사람의 입력을 한 턴으로 돌리고, 기록(`core.input`)의 `author`·`authors`·`clientMessageIds` 와 `requesters` 는 큐 coalesce 로 합쳐진 턴과 같은 모양이다. 쉬는 세션의 첫 입력도 묶음이면 혼자 턴을 열지 않고 한 턴으로 돈다. 규칙(1~16개, 원소가 둘 이상이면 `answer`·같은 cmid 금지, 일부만 겹친 재전송은 `error(input)`)은 core README. 새 export `TurnInputBundle`·`MAX_TURN_INPUTS`. 시그니처를 넓히기만 해 기존 호출은 그대로다. **`Engine` 을 직접 구현하는 쪽**은 런타임에 `Array.isArray(input)` 를 검사해 지원하지 않으면 `error(input)` 로 닫는다 — TS 메서드 이변성 때문에 좁은 시그니처(`input: TurnInput | string`)도 그대로 컴파일되고, 배열을 단일 입력처럼 다루면 `author` 없는 턴(`requesters` 없음)이 된다. 예시는 core README. 메모리·스크립트·스텁 엔진은 원소 둘 이상을 `error(input, '입력 묶음을 지원하지 않는다')` 로 닫는다. 묶음의 `requesters` 에는 모든 `author` 가 들어간다 — 승인 정책은 가장 좁은 권한으로 판단한다. 계약 스위트(`engineContractSuite`)의 묶음 단언은 새 cap `bundle` 을 켠 구현에서만 돈다. `inputAuthorFormat` 이 `'none'`(기본)이면 모델이 이어 붙은 글의 화자를 구분하지 못한다 — 묶음을 쓰면 접두어 형식을 켠다.
+- **`clientMessageId` 는 UTF-16 길이 200 이하 문자열이어야 한다(동작 변경).** 문자열이 아니거나 UTF-16 길이(JS `length`)가 200 을 넘으면 이제 `error(input)` 이다 — 단일 입력도 같다(1.8.7 까지는 숫자 cmid 도 그대로 통과했다). **`Engine.turn` 을 숫자 cmid 로 부르던 소비자는 모든 턴이 `error(input)` 이 된다 — `String(id)` 로 바꾼다.** 상한은 큐가 세션마다 기억하는 cmid 수(1024)와 곱해진 메모리 상한이다. 새 export `MAX_CLIENT_MESSAGE_ID`(200). chat-server 도 이 값으로 `POST /chat`·`send` 를 400 으로 막는다.
+- **큐 중복 판단이 합친 입력의 모든 cmid 를 본다.** 끝난 턴의 cmid 기억 창은 입력 64개에서 1024개(64턴 × 묶음 상한 16)로 늘었다. 그 밖의 단일 입력 동작은 바뀌지 않았다.
+
+### chat-server
+
+- **`handler.send({ inputs })` — 서버 코드가 여러 사람의 입력을 한 턴으로 보낸다.** `input` 대신 `inputs` 배열을 준다(원소마다 `author`·`clientMessageId`). 사람 글 항목 하나로 기록되고, 모두 실행된 묶음의 재전송은 `duplicate:'executed'`, 일부만 실행된 묶음은 `HttpError` 400 이다. `POST /chat` 은 바뀌지 않았다. `ChatSendOptions` 는 `input` 과 `inputs` 중 하나를 고르는 합집합 타입이 됐다(새 export `ChatSendInput`) — `input` 만 쓰던 호출은 그대로다.
+- **같은 `clientMessageId` 가 아직 도는 중이면** 재전송 응답은 `{queued:true}` 이고 엔진이 `core.duplicate` 로 끝낸다(새 턴 없음). 같은 cmid 를 든 두 턴이 함께 시작 전에 끝나면 그 칸은 마지막 턴이 사라질 때 `error(input)` 항목 하나로 닫힌다. `clientMessageId` 는 UTF-16 길이 200 까지(넘으면 400). 미룬 칸은 그 칸을 미룬 턴의 사유(중지면 `stopped`)로 닫히고, 실행 기록을 읽지 못해 실행 여부를 모르면 닫지 않는다 — 저장소를 읽지 못하면 칸은 다음 턴이 끝날 때까지(또는 다시 보낼 때까지) 열려 있다.
+
+- **tap 없는 풀 + `metrics` 기본이면 안내하는 오류로 던진다.** 풀에 `tap` 을 잇지 않고 `createChatHandler({ pool })` 을 부르면 1.8.7 까지는 core 의 `events() 를 쓰려면 …` 오류가 났다. 이제는 `tap` 을 잇거나 `metrics: false` 를 주라는 `TypeError` 다(던지는 조건은 그대로, 조용히 끄지 않는다). README "가장 짧은 예제"는 `createEventTap()` 을 엔진 `onEvent` 와 풀 `tap` 에 잇도록 고쳤다. 타입·export 는 바뀌지 않았다.
+
+### claude
+
+- **init 목록 밖 도구 호출.** 1.8.7 까지는 도구 호출 이름을 대조하지 않아 목록 밖 호출도 `tool-start`·`tool` 로 나갔고 승인 요청도 평소대로 처리됐다. 1.8.8 은 tool_use 와 승인 요청(`can_use_tool`)을 대조한다(규칙은 claude README '내장 도구 끄기').
+  - `builtinTools:'none'`·`'verified'` + `builtinToolsCheck:'strict'`: 내장 도구는 엔진이 넘긴 `--tools` 로, MCP 도구는 그 프로세스의 마지막 init 으로 본다. 어긋나면 tool_use 를 내지 않고 승인 요청은 기억한 규칙·사전 승인·카드보다 먼저 거절하며, 프로세스를 내리고 `error(reason:'config', resumable:false, detail:{builtinTools, check:'strict', why:'unlisted-tool', tool, hallucinated?})` 로 닫는다. `detail.why` 를 닫힌 목록으로 다루던 코드는 `'unlisted-tool'` 을 받게 고친다. 모델이 없는 도구 이름을 불러도(프롬프트 인젝션 포함) 턴이 닫힌다.
+  - **동작 변경(완화).** strict 의 init 앞 출력 판정이 프로세스 단위로 바뀌었다. 검사를 통과한 init 을 한 번 낸 프로세스는 재사용 턴이 init 앞에 출력해도 `output-before-init` 으로 닫지 않는다(1.8.7 은 닫았다). warn 의 `unverified` 알림도 그 경우 오지 않는다. 그 턴의 init 이 `--tools` 를 어기면 그때 끊는다. 재사용 중 CLI 가 `--tools` 를 어기면 그 턴의 init 전까지 승인 없이 실행되는 내장 도구가 실행될 수 있다(tool_use 이벤트·승인 요청은 `--tools` 로 막는다).
+  - 그 밖: 이벤트·카드는 1.8.7 과 같고, 그 턴에 한 번 `ext{ns:'claude.unlisted_tool', payload:{name, toolId?, parent?, tools, hallucinated?}}` 가 온다. 모르는 ext 를 버리는 소비자는 할 일이 없다.
+  - 호출마다 metric `tool.unlisted{outcome:'blocked'|'warned', builtinTools, hallucinated}` 를 낸다. core `Metric` 유니언에 이 갈래가 늘었다(`never` 검사로 이름을 가르던 코드는 한 갈래를 더한다).
+- **내장 도구 허용 목록 `builtinTools:{allow}`.** `claude.builtinTools` 에 `{ allow: string[] }` 값이 늘었다. `--tools` 를 그 목록으로 띄우고, 보장 검사·`builtinToolsCheck`·목록 밖 도구 대조는 `'verified'` 와 같되 허용 집합이 그 목록이다. 지금 `'verified'` + `permissions.disallowedTools` 로 목록을 좁히던 구성은 `{allow}` 로 옮길 수 있다.
+  - 빈 목록·빈 이름·중복·쉼표가 든 이름·`mcp__` 이름은 설정 오류다(모두 끄려면 `'none'`). 엔진이 모르는 이름은 넘기되 `core.config{warning:'unknown-tools', fields:['claude.builtinTools'], tools}` 로 프로세스마다 한 번 알린다. 이미지 file 전달은 목록에 `Read` 가 있어야 한다.
+  - `started.permissions.backend.builtinTools` 의 타입이 `{allow: string[]}` 까지 넓어졌고, 이 값의 실패·metric 은 `detail.builtinTools`·`builtinTools` 태그가 `'allow'` 다. 문자열 셋으로 `switch` 하던 코드는 객체 값을 받게 고친다.
+- **`started.tools`(core 이벤트의 선택 칸).** Claude 는 그 턴의 init `tools` 원문을 `started.tools` 에 싣는다(Codex 는 싣지 않는다). 도구 이름을 브라우저 같은 바깥에 내보내는 코드라면 이 칸을 빼고 넘긴다 — chat-server 는 `started` 를 그대로 넘기지 않아 해당이 없다.
+- **동작 변경 — 보장 검사에서 새로 실패할 수 있는 구성(warn·strict 모두).** CLI 가 `--tools`·`--disallowedTools` 를 지키면 해당이 없다 — 실측 2.1.326 에서 `'verified'` 의 init 은 띄운 목록 안이고(`LS` 등 없음), `--disallowedTools Bash` 면 init 에서 `Bash` 가 빠진다.
+  - `'verified'` 의 허용 집합이 확인 집합(18개)에서 띄운 목록(13개, `Agent` 는 `Task` 로)으로 좁아졌다. init 에 띄우지 않은 `LS`·`NotebookRead`·`MultiEdit`·`BashOutput` 이 나오면 1.8.7 은 통과했고 1.8.8 은 `error(config, detail:{builtinTools:'verified', unexpected})` 다. 넘겼는데 init 에 없는 이름은 실패가 아니다.
+  - `'verified'`·`{allow}` 의 허용 집합에서 `permissions.disallowedTools` 의 도구 전체 규칙(괄호 없는 이름)을 뺀다. 그 이름이 init 에 남으면 실패하고, strict 의 목록 밖 도구 대조에서도 목록 밖이다. 괄호 규칙(`Bash(rm:*)`)은 판정에 쓰지 않는다.
+- **분기 `{allow}` 의 상한.** 엔진 칸이 `'verified'`·`{allow}`·`'none'` 이면 분기 범위 `{allow}` 는 엔진 목록과의 교집합만 띄운다. 1.8.7 은 엔진 칸 `'verified'` 를 분기 목록이 통째로 바꿔, 확인 밖 도구(`CronCreate` 등)를 분기에서 띄울 수 있었다. 분기에서 엔진 칸 밖 도구를 쓰던 구성은 그 도구가 빠진다. 분기 프로세스는 교집합의 `{allow}`(비면 `'none'`)로 엔진 칸의 보장 검사·`builtinToolsCheck` 를 이어 간다 — 1.8.7 은 `'default'` 로 바꿔 검사하지 않았다(`started.permissions.backend.builtinTools` 도 그 값이다).
+- **샌드박스·추가 폴더 칸 `claude.sandbox`·`claude.addDirs`.** 1.8.7 까지는 CLI 내장 샌드박스(`--settings '{"sandbox":…}'`)와 `--add-dir` 를 `claude.extraArgs` 로만 줄 수 있었고, 그러면 범위 턴(`'read-only'`·`'none'`·`{allow}`)과 `consult` 가 모두 `error(config, cause:'extra-args')` 였다. 새 칸은 범위 턴을 막지 않는다(규칙은 claude README '샌드박스와 추가 폴더').
+  - 옮기는 법: `extraArgs: ['--settings', '{"sandbox":{"enabled":true}}', '--add-dir', '/data']` → `sandbox: { enabled: true, autoAllowBashIfSandboxed: false }, addDirs: ['/data']`. `sandbox` 는 `enabled`·`autoAllowBashIfSandboxed`·`network.allowedDomains` 만 받는다(다른 키는 설정 오류). `addDirs` 는 절대 경로만, 최대 32개다.
+  - `autoAllowBashIfSandboxed` 를 명시적 `false` 로 두지 않고 `enabled:true` 면 범위 턴과 `consult` 는 새 사유 `error(config, cause:'sandbox-auto-allow')` 로 시작하지 않는다. `detail.cause` 를 닫힌 목록으로 다루던 코드는 이 값을 받게 고친다.
+  - `extraArgs` 로 직접 준 `--settings`·`--add-dir` 는 그대로 넘어가고 범위 턴은 지금처럼 `'extra-args'` 다. started 뒤 프로세스마다 한 번 `core.config{warning:'prefer-field', fields:['claude.extraArgs --settings'|'claude.extraArgs --add-dir'], use:'claude.sandbox'|'claude.addDirs'}` 가 온다. 칸과 `extraArgs` 의 같은 플래그를 함께 주면 설정 오류다(엔진 생성 때 던지고, relay 는 고를 때 Claude 를 건너뛴다).
+  - `started.permissions.backend` 에 `sandbox`(boolean, 켜짐 여부)·`addDirs`(number, 개수)가 늘 실린다. 이 칸을 통째로 비교하던 코드는 고친다. 두 칸은 `resolveSession` 의 `claude` 로 받지 않는다(주면 그 턴은 `error(config)`). Codex 는 두 칸을 다른 `claude.*` 칸처럼 `core.config{warning:'ignored'}` 로 알리고 무시한다.
