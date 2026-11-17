@@ -4,6 +4,7 @@ agent-relay-engine 의 버전별 npm tarball 을 내려받는 곳이다. 패키�
 
 - 버전 목록과 파일: https://huansuh.github.io/agent-relay-engine-dist/
 - 최신 버전: [`latest.json`](latest.json) → `versions/<버전>/MANIFEST.json`
+- 버전별 릴리스 노트: `versions/<버전>/NOTES.md` — 그 버전에서 바뀐 것과 소비자가 할 일.
 - 각 tarball 안에 패키지 README 가 들어 있다(`package/README.md`).
 
 ## 패키지
@@ -60,7 +61,7 @@ npm install
 
 ## 버전 올리기
 
-새 버전의 tarball 을 받아 `file:` 경로를 **모두** 새 버전으로 바꾸고 `npm install` 한다. 버전마다 할 일과 동작 변경은 각 버전 항목의 요약과 패키지 README 를 본다.
+새 버전의 tarball 을 받아 `file:` 경로를 **모두** 새 버전으로 바꾸고 `npm install` 한다. 건너뛰는 버전이 있으면 그 사이 버전의 릴리스 노트(`versions/<버전>/NOTES.md`)를 모두 읽고, 각 노트의 할 일을 따른다.
 
 같은 버전의 tarball 은 한 번 올린 뒤 바꾸지 않는다.
 
