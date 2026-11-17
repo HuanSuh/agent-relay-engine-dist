@@ -23,7 +23,22 @@ agent-relay-engine 의 버전별 npm tarball 을 내려받는 곳이다. 패키�
 
 내부 패키지끼리는 `^<버전>` 범위로 서로를 가리킨다. 쓰는 패키지와 그 패키지가 기대는 내부 패키지를 **모두** 같은 버전의 tarball 로 설치한다. 하나라도 빠지면 npm 이 레지스트리에서 찾다가 404 로 실패한다.
 
-## 설치
+## 빠른 설치(설치 스크립트)
+
+프로젝트 루트(`package.json` 이 있는 폴더)에서 돌린다. Node 18 이상.
+
+```sh
+curl -fsSLO https://huansuh.github.io/agent-relay-engine-dist/install.mjs
+node install.mjs latest claude chat-server   # 또는 버전: node install.mjs 1.8.6 claude
+npm install
+```
+
+- 고른 패키지와 그 내부 의존을 같은 버전으로 `vendor/agent-relay-engine/` 에 받고, 각 파일의 sha256 을 MANIFEST 와 대조한 뒤 `package.json` 에 `file:` 로 적는다. 불일치하면 쓰지 않고 멈춘다.
+- 버전 올리기: `node install.mjs <새 버전>` — 패키지를 안 주면 `package.json` 에 있는 `@agent-relay-engine/*` 를 모두 그 버전으로 바꾼다.
+- `--dry` 는 할 일만 보이고, `--dir <폴더>` 는 받을 폴더를 바꾼다. 받은 지난 버전 tarball 은 지우지 않는다.
+- 스크립트를 돌리기 전에 내용을 읽어 보고 싶으면 이 레포의 [`install.mjs`](install.mjs) 를 본다.
+
+## 손으로 설치
 
 1. 쓸 버전의 tarball 을 받아 프로젝트 안 폴더(예: `vendor/`)에 둔다.
 
