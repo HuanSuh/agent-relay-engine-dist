@@ -1,0 +1,63 @@
+{
+  "ask": {
+    "name": "@agent-relay-engine/ask",
+    "file": "agent-relay-engine-ask-1.8.9.tgz",
+    "deps": [
+      "core",
+      "side-fs"
+    ]
+  },
+  "chat-client": {
+    "name": "@agent-relay-engine/chat-client",
+    "file": "agent-relay-engine-chat-client-1.8.9.tgz",
+    "deps": []
+  },
+  "chat-server": {
+    "name": "@agent-relay-engine/chat-server",
+    "file": "agent-relay-engine-chat-server-1.8.9.tgz",
+    "deps": [
+      "core"
+    ]
+  },
+  "chat-ui": {
+    "name": "@agent-relay-engine/chat-ui",
+    "file": "agent-relay-engine-chat-ui-1.8.9.tgz",
+    "deps": [
+      "chat-client"
+    ]
+  },
+  "claude": {
+    "name": "@agent-relay-engine/claude",
+    "file": "agent-relay-engine-claude-1.8.9.tgz",
+    "deps": [
+      "core"
+    ]
+  },
+  "codex": {
+    "name": "@agent-relay-engine/codex",
+    "file": "agent-relay-engine-codex-1.8.9.tgz",
+    "deps": [
+      "core"
+    ]
+  },
+  "core": {
+    "name": "@agent-relay-engine/core",
+    "file": "agent-relay-engine-core-1.8.9.tgz",
+    "deps": []
+  },
+  "side-fs": {
+    "name": "@agent-relay-engine/side-fs",
+    "file": "agent-relay-engine-side-fs-1.8.9.tgz",
+    "deps": [
+      "core"
+    ]
+  },
+  "testing": {
+    "name": "@agent-relay-engine/testing",
+    "file": "agent-relay-engine-testing-1.8.9.tgz",
+    "deps": [
+      "core",
+      "claude"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "version": "1.8.9",
+  "commit": "bc0646f3ba21c1c1120471d2194bd79f5c0f0b5d",
+  "packages": [
+    {
+      "name": "@agent-relay-engine/ask",
+      "file": "agent-relay-engine-ask-1.8.9.tgz",
+      "sha256": "75bdec513fa17d25b9c50fff7ca4d4bc22d05ff568ef5fbbe6a453ec6107fb62",
+      "integrity": "sha512-BxUkiWO/v5/NsWJfX/HP5/x9E0UCZTvN7411s3HN4no5HIKSAHLKBLNf5mlDX4Yok+FSd538FsWN5OuNO2GelA=="
+    },
+    {
+      "name": "@agent-relay-engine/chat-client",
+      "file": "agent-relay-engine-chat-client-1.8.9.tgz",
+      "sha256": "1bfb53eb9cc24eb8662f72a7713f45320e810d86d8446af901f418a2f3fbf146",
+      "integrity": "sha512-1YVp5mqSv1jv9o/M7lgNopzNyxf2jEW2v9nLUAyYx8KZFmSvBfYtdjbhtMXzyh22yjDOC5Mf7ZkIiQ+4SgQW9g=="
+    },
+    {
+      "name": "@agent-relay-engine/chat-server",
+      "file": "agent-relay-engine-chat-server-1.8.9.tgz",
+      "sha256": "daf020aba7d1cfaaa71a83657dce943a546f5d33f2b2ee3ec61258190f96c7c2",
+      "integrity": "sha512-wH/qN5mqTolGr7zC5ER6xFtwBkFQig1yvRwPo4alJkllvPQ8Z57mYM+196X/ta7rkUKyUfz0gBih9k3bnlld/Q=="
+    },
+    {
+      "name": "@agent-relay-engine/chat-ui",
+      "file": "agent-relay-engine-chat-ui-1.8.9.tgz",
+      "sha256": "0dcfe577a4ef39c16b5a0ccd1a4fe760b9955eda48fb6e1993d6c3c7646e1fbe",
+      "integrity": "sha512-p+Q921OwHg3T2cUWFrRu/mKaIQEFm/ilFn37C4rM7FGlvOZR0dvS/Bl8N5cJ3+4qlI9aLh1vml28EdXfz8kL2Q=="
+    },
+    {
+      "name": "@agent-relay-engine/claude",
+      "file": "agent-relay-engine-claude-1.8.9.tgz",
+      "sha256": "2d6484c7443c17a195c382cae821494164ac035785e2a618a3a4fc607a543479",
+      "integrity": "sha512-RA8D4rLhenbnceERr7kARvMoCv3j+M/HtAbjUTaSejJLGgAwNyX8bxPrtbralUvtGtsDwuAmNK3xgZHffPdplg=="
+    },
+    {
+      "name": "@agent-relay-engine/codex",
+      "file": "agent-relay-engine-codex-1.8.9.tgz",
+      "sha256": "c6a3152de8efd3701c353fcca5bbe0f004d56bb261a21a35267082e346eaf419",
+      "integrity": "sha512-X4IEGrwPRhmUnQktex3jTKnFIJF5E+70alEN2GOFYKsdFqiopJ2vdnAWVnnDAJfEidAWzIabNgzIALmuceIdtg=="
+    },
+    {
+      "name": "@agent-relay-engine/core",
+      "file": "agent-relay-engine-core-1.8.9.tgz",
+      "sha256": "2f68ea15638b5718c1a416e4ade3b0a2040a616fa1ca25163b34a92d6037bffc",
+      "integrity": "sha512-seVjpWK9VCmQheFbR5Au0TQv+1frWZYeuJ0gHrNH2C+WkicxDPrPMjf+PghOb5vrI6dv1CAO3LKyoKxPEhDgsw=="
+    },
+    {
+      "name": "@agent-relay-engine/side-fs",
+      "file": "agent-relay-engine-side-fs-1.8.9.tgz",
+      "sha256": "89987e096896a9d63eb92095c316615177d9068d6c715aa555017b8b7a22ab05",
+      "integrity": "sha512-y8e3Xe5crXORN0hh+1xkMQyngkMKlBTFrww9p1O6Tmyr/r+lvEAdl7C5WpiLV8fOVkjgV1IPAb9w4M1r/ZzuCg=="
+    },
+    {
+      "name": "@agent-relay-engine/testing",
+      "file": "agent-relay-engine-testing-1.8.9.tgz",
+      "sha256": "099732a8ca4a6f11b8e62062e97df78e36e254de07a424324da821753267b6ef",
+      "integrity": "sha512-myOs/uoCENq8r5+mGkVPutkPH7f92Tyb3l1rmIdAltp2LHH/LcVkWwFwvOaeS7Gm+4DV9LvMd0RWJC1H+jcitA=="
+    }
+  ]
+}
